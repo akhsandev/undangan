@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Pesan Undangan WhatsApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        /* Menambahkan font kustom */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Style untuk tombol download yang lebih menarik */
+        .download-button {
+            display: inline-block;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        /* Penyesuaian untuk tampilan link di tabel */
+        .link-text {
+            word-break: break-all;
+            white-space: normal;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl p-6 md:p-10">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">WA Invitation Link Generator</h1>
+            <p class="text-lg text-gray-500 dark:text-gray-400">Alat untuk membuat tautan WhatsApp undangan personal</p>
+        </header>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 border-b pb-2 text-gray-700 dark:text-gray-200">Pilih Mode</h2>
+            <div class="flex space-x-4">
+                <button id="manual-mode-btn" class="flex-1 py-2 px-4 rounded-lg font-medium transition duration-150 bg-indigo-600 text-white shadow-md hover:bg-indigo-700">Generator Manual (1 per 1)</button>
+                <button id="batch-mode-btn" class="flex-1 py-2 px-4 rounded-lg font-medium transition duration-150 bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Generator Batch (CSV)</button>
+            </div>
+        </div>
+
+        <div id="manual-generator-area" class="space-y-6">
+            <h2 class="text-2xl font-semibold mb-4 border-b pb-2 text-gray-700 dark:text-gray-200">Mode Manual</h2>
+            
+            <div>
+                <label for="guestName" class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Nama Tamu Undangan (Contoh: Bapak/Ibu Dwi)</label>
+                <input type="text" id="guestName" placeholder="Masukkan nama tamu" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+            </div>
+
+            <div>
+                <label for="phoneNumber" class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Nomor HP (Contoh: 081234567890)</label>
+                <input type="text" id="phoneNumber" placeholder="Dimulai dengan 08" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+            </div>
+
+            <button id="generateManualBtn" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow-md hover:bg-green-700 transition duration-150">Generate Link Undangan</button>
+
+            <div id="manualResultArea" class="hidden mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-200">Link yang Dihasilkan:</h3>
+                <div class="flex space-x-3">
+                    <input type="text" id="manualLinkOutput" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white dark:bg-gray-600 dark:border-gray-500 text-sm overflow-x-scroll">
+                    <button id="copyManualLinkBtn" class="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition duration-150 whitespace-nowrap">Salin Link</button>
+                    <a id="openWaManualBtn" target="_blank" class="bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition duration-150 whitespace-nowrap">Buka di WhatsApp</a>
+                </div>
+                <p id="copyStatus" class="mt-2 text-sm text-green-600 dark:text-green-400 hidden">Link berhasil disalin!</p>
+            </div>
+        </div>
+
+        <div id="batch-generator-area" class="hidden space-y-6">
+            <h2 class="text-2xl font-semibold mb-4 border-b pb-2 text-gray-700 dark:text-gray-200">Mode Batch (CSV)</h2>
+            
+            <p class="text-sm text-gray-600 dark:text-gray-400">Pastikan file CSV Anda memiliki kolom header **`nama`** dan **`nomorhp`** (tanpa tanda kutip, di baris pertama).</p>
+            
+            <div>
+                <label for="csvFile" class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Pilih File CSV</label>
+                <input type="file" id="csvFile" accept=".csv" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
+            </div>
+
+            <button id="generateBatchBtn" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold shadow-md hover:bg-green-700 transition duration-150">Proses CSV & Generate Link</button>
+
+            <div id="batchResultArea" class="hidden mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-center">
+                <p id="processingStatus" class="text-gray-700 dark:text-gray-200 mb-4"></p>
+                <a id="downloadBatchResult" class="download-button hidden bg-blue-600 text-white py-3 px-6 rounded-lg font-bold shadow-md hover:bg-blue-700 transition duration-150" download="hasil_link_undangan.csv">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Unduh Hasil CSV
+                </a>
+            </div>
+            
+            <p id="batchErrorMessage" class="text-sm text-red-600 dark:text-red-400 hidden mt-2"></p>
+
+            <div id="batchTableContainer" class="hidden mt-6 overflow-x-auto">
+                <h3 class="text-lg font-medium mb-2 text-gray-700 dark:text-gray-200">Pratinjau Hasil:</h3>
+                <table id="batchResultTable" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 shadow-md rounded-lg overflow-hidden">
+                    <thead class="bg-gray-100 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Nama Tamu</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Nomor HP</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Link Undangan (WA)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI PENTING ---
+        const WEDDING_URL = 'https://www.pakakhsan.my.id/aslinda/'; // HANYA UBAH BAGIAN INI JIKA URL UTAMA BERUBAH
+        // -----------------------------
+
+        // Fungsi untuk membersihkan dan memformat nomor HP
+        const formatPhoneNumber = (phone) => {
+             // Membersihkan karakter non-digit
+            const cleanPhone = phone.replace(/\D/g, '');
+            // Mengubah 0 di awal menjadi 62
+             if (cleanPhone.startsWith('0')) {
+                return '62' + cleanPhone.substring(1);
+            }
+            return cleanPhone;
+        }
+
+        // FUNGSI INTI: Membuat teks pesan WhatsApp
+        const createMessage = (guestName) => {
+            const encodedGuestName = encodeURIComponent(guestName.trim());
+            
+            // Perhatikan penggunaan * di sini untuk format tebal di WhatsApp.
+            // \n\n digunakan untuk baris baru.
+            const message = 
+`Assalamualaikum Warahmatullahi Wabarakatuh.
+Tanpa mengurangi rasa hormat, kami memohon restu dan mengundang Bapak/Ibu/Saudara/i:
+
+*${guestName.trim().toUpperCase()}*
+
+untuk hadir dalam acara pernikahan kami yang Insya Allah akan diselenggarakan.
+Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+
+Informasi lengkap mengenai detail acara, lokasi, dan galeri dapat diakses melalui tautan undangan digital kami di bawah ini:
+
+${WEDDING_URL}?to=${encodedGuestName}
+
+Mohon maaf jika terdapat kesalahan dalam penulisan nama atau gelar.
+Atas kehadiran dan doa restunya, kami mengucapkan terima kasih.
+Wassalamualaikum Warahmatullahi Wabarakatuh.
+
+Hormat kami,
+*Aslinda Putri, S.Pd., Gr. dan Akhsan Rian Anugrah, S.Pd., Gr.*`;
+
+            return message;
+        }
+
+        // --- DOM Elements ---
+        const manualModeBtn = document.getElementById('manual-mode-btn');
+        const batchModeBtn = document.getElementById('batch-mode-btn');
+        const manualArea = document.getElementById('manual-generator-area');
+        const batchArea = document.getElementById('batch-generator-area');
+
+        // Manual Mode Elements
+        const guestNameInput = document.getElementById('guestName');
+        const phoneNumberInput = document.getElementById('phoneNumber');
+        const generateManualBtn = document.getElementById('generateManualBtn');
+        const manualResultArea = document.getElementById('manualResultArea');
+        const manualLinkOutput = document.getElementById('manualLinkOutput');
+        const copyManualLinkBtn = document.getElementById('copyManualLinkBtn');
+        const openWaManualBtn = document.getElementById('openWaManualBtn');
+        const copyStatus = document.getElementById('copyStatus');
+
+        // Batch Mode Elements
+        const csvFileInput = document.getElementById('csvFile');
+        const generateBatchBtn = document.getElementById('generateBatchBtn');
+        const batchResultArea = document.getElementById('batchResultArea');
+        const processingStatus = document.getElementById('processingStatus');
+        const downloadButton = document.getElementById('downloadBatchResult');
+        const batchErrorMessage = document.getElementById('batchErrorMessage');
+        const batchTableContainer = document.getElementById('batchTableContainer'); // Kontainer Tabel
+        const batchResultTableBody = document.querySelector('#batchResultTable tbody'); // Body Tabel
+
+        // --- Mode Switching Logic ---
+        const setMode = (mode) => {
+            if (mode === 'manual') {
+                manualArea.classList.remove('hidden');
+                batchArea.classList.add('hidden');
+                manualModeBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'dark:bg-gray-700', 'dark:text-gray-200', 'dark:hover:bg-gray-600');
+                manualModeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'hover:bg-indigo-700');
+                batchModeBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'dark:bg-gray-700', 'dark:text-gray-200', 'dark:hover:bg-gray-600');
+                batchModeBtn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'hover:bg-indigo-700');
+            } else if (mode === 'batch') {
+                manualArea.classList.add('hidden');
+                batchArea.classList.remove('hidden');
+                batchModeBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'dark:bg-gray-700', 'dark:text-gray-200', 'dark:hover:bg-gray-600');
+                batchModeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md', 'hover:bg-indigo-700');
+                manualModeBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'dark:bg-gray-700', 'dark:text-gray-200', 'dark:hover:bg-gray-600');
+                manualModeBtn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md', 'hover:bg-indigo-700');
+            }
+        }
+
+        manualModeBtn.addEventListener('click', () => setMode('manual'));
+        batchModeBtn.addEventListener('click', () => setMode('batch'));
+
+        // Default mode
+        setMode('manual'); 
+
+
+        // --- Manual Generator Logic ---
+        generateManualBtn.addEventListener('click', () => {
+            const guestName = guestNameInput.value.trim();
+            const rawPhoneNumber = phoneNumberInput.value.trim();
+            const phoneNumber = formatPhoneNumber(rawPhoneNumber);
+
+            copyStatus.classList.add('hidden');
+
+            if (!guestName || !rawPhoneNumber) {
+                alert('Nama Tamu dan Nomor HP harus diisi!');
+                manualResultArea.classList.add('hidden');
+                return;
+            }
+
+            const message = createMessage(guestName);
+            const encodedMessage = encodeURIComponent(message);
+            
+            const whatsappLink = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+
+            manualLinkOutput.value = whatsappLink;
+            openWaManualBtn.href = whatsappLink;
+            manualResultArea.classList.remove('hidden');
+        });
+
+        copyManualLinkBtn.addEventListener('click', () => {
+            manualLinkOutput.select();
+            manualLinkOutput.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            copyStatus.classList.remove('hidden');
+            setTimeout(() => copyStatus.classList.add('hidden'), 3000);
+        });
+        
+        // Fungsi untuk merender data ke dalam tabel HTML
+        const renderTable = (data) => {
+            batchResultTableBody.innerHTML = ''; // Kosongkan tabel sebelumnya
+            
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                // Warna latar bergantian untuk keterbacaan
+                tr.className = index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700';
+                
+                // Kolom Nama Tamu
+                let tdName = document.createElement('td');
+                tdName.className = 'px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200';
+                tdName.textContent = row['Nama Tamu'];
+                tr.appendChild(tdName);
+
+                // Kolom Nomor HP
+                let tdPhone = document.createElement('td');
+                tdPhone.className = 'px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400';
+                tdPhone.textContent = row['Nomor HP'];
+                tr.appendChild(tdPhone);
+
+                // Kolom Link Undangan
+                let tdLink = document.createElement('td');
+                tdLink.className = 'px-3 py-2 text-sm text-blue-600 dark:text-blue-400 link-text';
+                
+                let link = document.createElement('a');
+                link.href = row['Link Undangan'];
+                link.target = '_blank';
+                link.textContent = 'Buka WA: ' + row['Nama Tamu']; // Teks link lebih deskriptif
+                link.className = 'hover:underline';
+                
+                tdLink.appendChild(link);
+                tr.appendChild(tdLink);
+                
+                batchResultTableBody.appendChild(tr);
+            });
+            
+            batchTableContainer.classList.remove('hidden');
+        }
+
+
+        // --- Batch Generator Logic ---
+        generateBatchBtn.addEventListener('click', () => {
+            const file = csvFileInput.files[0];
+            batchResultArea.classList.add('hidden');
+            batchTableContainer.classList.add('hidden'); // Sembunyikan tabel sebelum proses
+            batchErrorMessage.classList.add('hidden');
+            processingStatus.textContent = 'Sedang memproses...';
+            downloadButton.classList.add('hidden');
+
+            if (!file) {
+                batchErrorMessage.textContent = 'Harap pilih file CSV terlebih dahulu.';
+                batchErrorMessage.classList.remove('hidden');
+                return;
+            }
+
+            batchResultArea.classList.remove('hidden');
+            
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    const headers = results.meta.fields || [];
+
+                    // Validasi Header
+                    const hasNama = headers.some(h => h.trim().toLowerCase() === 'nama');
+                    const hasNomorHp = headers.some(h => h.trim().toLowerCase() === 'nomorhp');
+
+                    if (!hasNama || !hasNomorHp) {
+                        batchErrorMessage.textContent = 'Kesalahan: File CSV harus memiliki kolom header "nama" dan "nomorhp".';
+                        batchErrorMessage.classList.remove('hidden');
+                        batchResultArea.classList.add('hidden');
+                        return;
+                    }
+
+                    const outputData = [];
+                    data.forEach(row => {
+                        // Ambil data dengan keys yang sudah divalidasi (case-insensitive trim)
+                        const guestNameKey = headers.find(h => h.trim().toLowerCase() === 'nama');
+                        const phoneNumberKey = headers.find(h => h.trim().toLowerCase() === 'nomorhp');
+
+                        const guestName = row[guestNameKey]?.trim() || '';
+                        const rawPhoneNumber = row[phoneNumberKey]?.trim() || '';
+                        
+                        // Hanya proses data yang valid
+                        if (guestName && rawPhoneNumber) {
+                            const phoneNumber = formatPhoneNumber(rawPhoneNumber);
+                            const message = createMessage(guestName);
+                            const encodedMessage = encodeURIComponent(message);
+                            const whatsappLink = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+
+                            outputData.push({
+                                'Nama Tamu': guestName,
+                                'Nomor HP': rawPhoneNumber, // Simpan nomor asli, link menggunakan yang sudah diformat
+                                'Link Undangan': whatsappLink
+                            });
+                        }
+                    });
+
+                    if(outputData.length > 0) {
+                        const csvOutput = Papa.unparse(outputData);
+                        const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+                        const url = URL.createObjectURL(blob);
+                        
+                        downloadButton.href = url;
+                        processingStatus.textContent = `${outputData.length} link berhasil dibuat! Klik tombol di bawah untuk mengunduh, atau lihat pratinjau di bawah tabel.`;
+                        downloadButton.classList.remove('hidden');
+                        
+                        // Tampilkan hasil di tabel
+                        renderTable(outputData); 
+                        
+                    } else {
+                        processingStatus.textContent = 'Tidak ada data valid (kolom nama dan nomorhp terisi) yang ditemukan di dalam file CSV.';
+                        downloadButton.classList.add('hidden');
+                        batchTableContainer.classList.add('hidden');
+                    }
+                },
+                error: function(err, file) {
+                    batchErrorMessage.textContent = 'Terjadi kesalahan saat memproses file: ' + err.message;
+                    batchErrorMessage.classList.remove('hidden');
+                    batchResultArea.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
